@@ -74,6 +74,8 @@
 #include <iterator>
 #include <utility>
 
+#include "souper/Inst/Inst.h"
+
 using namespace llvm;
 using namespace llvm::PatternMatch;
 
