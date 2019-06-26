@@ -74,7 +74,8 @@
 #include <iterator>
 #include <utility>
 
-#include "souper/Inst/Inst.h"
+#include "souper/Extractor/ExprBuilder.h"
+#include "souper/Extractor/Candidates.h"
 
 using namespace llvm;
 using namespace llvm::PatternMatch;
@@ -1595,6 +1596,7 @@ KnownBits computeKnownBits(const Value *V, unsigned Depth, const Query &Q) {
 /// where V is a vector, known zero, and known one values are the
 /// same width as the vector element, and the bit is set only if it is true
 /// for all of the elements in the vector.
+#if (false)
 void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
                       const Query &Q) {
   assert(V && "No Value?");
@@ -1698,6 +1700,31 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
 
   assert((Known.Zero & Known.One) == 0 && "Bits known to be one AND zero?");
 }
+#endif
+
+void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
+                      const Query &Q) {
+  /*  ExprBuilderOptions EBO;
+
+  LoopInfo *LI;
+  DemandedBits *DB;
+  LazyValueInfo *LVI;
+  ScalarEvolution *SE;
+  TargetLibraryInfo *TLI;
+  */
+  souper::ExprBuilderOptions EBO;
+  souper::InstContext IC;
+  souper::ExprBuilderContext EBC;
+
+  if (Q.CxtI) {
+    souper::ExprBuilderS EB(EBO, (Q.CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
+    souper::Inst *SouperInst = EB.get(const_cast<llvm::Value*>(V));
+    souper::ReplacementContext RC;
+    RC.printInst(SouperInst, llvm::errs(), true);
+    Known.resetAll();
+  }
+}
+
 
 /// Return true if the given value is known to have exactly one
 /// bit set when defined. For vectors return true if every element is known to
