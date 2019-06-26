@@ -1717,27 +1717,24 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
   souper::ExprBuilderOptions EBO;
   souper::InstContext IC;
   souper::ExprBuilderContext EBC;
-
+  bool debug = false;
 
   Known.resetAll();
 
   if (Q.CxtI) {
     souper::ExprBuilderS EB(EBO, (Q.CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
     souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
-    souper::ReplacementContext RC;
-    RC.printInst(I, llvm::errs(), true);
+    if (debug) {
+      souper::ReplacementContext RC;
+      RC.printInst(I, llvm::errs(), true);
+    }
 
 
     std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(souper::makeExternalSolverProgram("/usr/bin/z3"),
                                                                       false);
     std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/30000);
 
-    unsigned W = Known.getBitWidth();
-    llvm::ConstantRange Range = S->constantRange({}, {}, I, IC);
-
-    llvm::outs() << "known range from souper: " << "[" << Range.getLower()
-                 << "," << Range.getUpper() << ")" << "\n";
-
+    S->knownBits({}, {}, I, Known, IC);
   }
 
 }
