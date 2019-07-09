@@ -270,12 +270,42 @@ bool llvm::isKnownPositive(const Value *V, const DataLayout &DL, unsigned Depth,
          isKnownNonZero(V, DL, Depth, AC, CxtI, DT, UseInstrInfo);
 }
 
+#if (false)
 bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
                            AssumptionCache *AC, const Instruction *CxtI,
                            const DominatorTree *DT, bool UseInstrInfo) {
   KnownBits Known =
       computeKnownBits(V, DL, Depth, AC, CxtI, DT, nullptr, UseInstrInfo);
   return Known.isNegative();
+}
+#endif
+
+bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
+                           AssumptionCache *AC, const Instruction *CxtI,
+                           const DominatorTree *DT, bool UseInstrInfo) {
+  souper::ExprBuilderOptions EBO;
+  souper::InstContext IC;
+  souper::ExprBuilderContext EBC;
+  bool debug = false;
+  bool Negative;
+
+
+  if (CxtI) {
+    souper::ExprBuilderS EB(EBO, (CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
+    souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
+    if (debug) {
+      souper::ReplacementContext RC;
+      RC.printInst(I, llvm::errs(), true);
+    }
+
+
+    std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                                                      false);
+    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/30000);
+    S->negative({}, {}, I, Negative, IC);
+  }
+
+  return Negative;
 }
 
 static bool isKnownNonEqual(const Value *V1, const Value *V2, const Query &Q);
