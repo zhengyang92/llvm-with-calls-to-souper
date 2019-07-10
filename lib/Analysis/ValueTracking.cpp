@@ -22,6 +22,7 @@
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/Analysis/AliasAnalysis.h"
@@ -81,6 +82,11 @@
 
 using namespace llvm;
 using namespace llvm::PatternMatch;
+
+#define DEBUG_TYPE "value-tracking"
+
+STATISTIC(NumKnownBitsDFA,
+          "Number of optimizations enabled by known bits dataflow analysis");
 
 const unsigned MaxDepth = 6;
 
@@ -1752,6 +1758,7 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
   Known.resetAll();
 
   if (Q.CxtI) {
+#if LLVM_ENABLE_STATS || !defined(NDEBUG)
     souper::ExprBuilderS EB(EBO, (Q.CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
     souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
     if (debug) {
@@ -1765,6 +1772,8 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
     std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/30000);
 
     S->knownBits({}, {}, I, Known, IC);
+    ++NumKnownBitsDFA;
+#endif // LLVM_ENABLE_STATS || !defined(NDEBUG)
   }
 
 }
