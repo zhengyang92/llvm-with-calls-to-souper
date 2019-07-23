@@ -83,10 +83,10 @@
 using namespace llvm;
 using namespace llvm::PatternMatch;
 
-#define DEBUG_TYPE "value-tracking"
-
-STATISTIC(NumKnownBitsDFA,
-          "Number of optimizations enabled by known bits dataflow analysis");
+//#define DEBUG_TYPE "value-tracking"
+//
+//STATISTIC(NumKnownBitsDFA,
+//          "Number of optimizations enabled by known bits dataflow analysis");
 
 const unsigned MaxDepth = 6;
 
@@ -1758,7 +1758,7 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
   Known.resetAll();
 
   if (Q.CxtI) {
-#if LLVM_ENABLE_STATS || !defined(NDEBUG)
+//#if LLVM_ENABLE_STATS || !defined(NDEBUG)
     souper::ExprBuilderS EB(EBO, (Q.CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
     souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
     if (debug) {
@@ -1772,8 +1772,8 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
     std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/30000);
 
     S->knownBits({}, {}, I, Known, IC);
-    ++NumKnownBitsDFA;
-#endif // LLVM_ENABLE_STATS || !defined(NDEBUG)
+//    ++NumKnownBitsDFA;
+//#endif // LLVM_ENABLE_STATS || !defined(NDEBUG)
   }
 
 }
