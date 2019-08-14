@@ -1742,14 +1742,6 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
 
 void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
                       const Query &Q) {
-  /*  ExprBuilderOptions EBO;
-
-  LoopInfo *LI;
-  DemandedBits *DB;
-  LazyValueInfo *LVI;
-  ScalarEvolution *SE;
-  TargetLibraryInfo *TLI;
-  */
   souper::ExprBuilderOptions EBO;
   souper::InstContext IC;
   souper::ExprBuilderContext EBC;
@@ -1757,24 +1749,18 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
 
   Known.resetAll();
 
-  if (Q.CxtI) {
-//#if LLVM_ENABLE_STATS || !defined(NDEBUG)
-    souper::ExprBuilderS EB(EBO, (Q.CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
+  //if (Q.CxtI && (Q.CxtI)->getModule()) {
+    souper::ExprBuilderS EB(EBO, Q.DL, 0, 0, 0, 0, 0, IC, EBC);
     souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
     if (debug) {
       souper::ReplacementContext RC;
       RC.printInst(I, llvm::errs(), true);
     }
-
-
     std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(souper::makeExternalSolverProgram("/usr/bin/z3"),
                                                                       false);
     std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/30000);
-
     S->knownBits({}, {}, I, Known, IC);
-//    ++NumKnownBitsDFA;
-//#endif // LLVM_ENABLE_STATS || !defined(NDEBUG)
-  }
+  //}
 
 }
 
