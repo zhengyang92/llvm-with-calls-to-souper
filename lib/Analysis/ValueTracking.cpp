@@ -104,6 +104,23 @@ static unsigned getBitWidth(Type *Ty, const DataLayout &DL) {
   return DL.getIndexTypeSizeInBits(Ty);
 }
 
+// Souper Cache for known bits DFA
+std::unordered_map<souper::Inst*, llvm::KnownBits> KnownCache;
+// Souper Cache for negative DFA
+std::unordered_map<souper::Inst*, bool> NegCache;
+
+bool lookupKnownCache(souper::Inst *I) {
+  if (KnownCache.find(I) != KnownCache.end())
+    return true;
+  return false;
+}
+
+bool lookupNegCache(souper::Inst *I) {
+  if (NegCache.find(I) != NegCache.end())
+    return true;
+  return false;
+}
+
 namespace {
 
 // Simplifying using an assume can only be done in a particular control-flow
@@ -1742,6 +1759,7 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
 
 void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
                       const Query &Q) {
+  //llvm::outs() << "--- In LLVM: computeKnownBits() starts here\n";
   souper::ExprBuilderOptions EBO;
   souper::InstContext IC;
   souper::ExprBuilderContext EBC;
@@ -1758,8 +1776,16 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
     }
     std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(souper::makeExternalSolverProgram("/usr/bin/z3"),
                                                                       false);
-    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/30000);
-    S->knownBits({}, {}, I, Known, IC);
+    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/6000);
+    
+    // Lookup in cache
+    if (lookupKnownCache(I)) {
+        Known.Zero = (KnownCache.at(I)).Zero;
+        Known.One = (KnownCache.at(I)).One;
+    } else {
+      S->knownBits({}, {}, I, Known, IC);
+      KnownCache.emplace(I, Known);
+    }
   //}
 
 }
