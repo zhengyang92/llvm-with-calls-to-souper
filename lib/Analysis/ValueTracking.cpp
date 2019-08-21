@@ -324,8 +324,16 @@ bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
 
     std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(souper::makeExternalSolverProgram("/usr/bin/z3"),
                                                                       false);
-    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/30000);
-    S->negative({}, {}, I, Negative, IC);
+    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/60000);
+
+    // Lookup cache
+    if (lookupNegCache(I)) {
+        Negative = NegCache.at(I);
+    } else {
+      S->negative({}, {}, I, Negative, IC);
+      NegCache.emplace(I, Negative);
+    }
+    //S->negative({}, {}, I, Negative, IC);
   }
 
   return Negative;
@@ -1776,9 +1784,11 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
     }
     std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(souper::makeExternalSolverProgram("/usr/bin/z3"),
                                                                       false);
-    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/6000);
+    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/600);
     
+    S->knownBits({}, {}, I, Known, IC);
     // Lookup in cache
+#if 0
     if (lookupKnownCache(I)) {
         Known.Zero = (KnownCache.at(I)).Zero;
         Known.One = (KnownCache.at(I)).One;
@@ -1786,6 +1796,7 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
       S->knownBits({}, {}, I, Known, IC);
       KnownCache.emplace(I, Known);
     }
+#endif
   //}
 
 }
