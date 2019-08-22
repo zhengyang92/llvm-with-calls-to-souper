@@ -106,23 +106,6 @@ static unsigned getBitWidth(Type *Ty, const DataLayout &DL) {
   return DL.getIndexTypeSizeInBits(Ty);
 }
 
-// Souper Cache for known bits DFA
-std::unordered_map<souper::Inst*, llvm::KnownBits> KnownCache;
-// Souper Cache for negative DFA
-std::unordered_map<souper::Inst*, bool> NegCache;
-
-bool lookupKnownCache(souper::Inst *I) {
-  if (KnownCache.find(I) != KnownCache.end())
-    return true;
-  return false;
-}
-
-bool lookupNegCache(souper::Inst *I) {
-  if (NegCache.find(I) != NegCache.end())
-    return true;
-  return false;
-}
-
 namespace {
 
 // Simplifying using an assume can only be done in a particular control-flow
@@ -328,14 +311,7 @@ bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
                                                                       false);
     std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/60000);
 
-    // Lookup cache
-    if (lookupNegCache(I)) {
-        Negative = NegCache.at(I);
-    } else {
-      S->negative({}, {}, I, Negative, IC);
-      NegCache.emplace(I, Negative);
-    }
-    //S->negative({}, {}, I, Negative, IC);
+    S->negative({}, {}, I, Negative, IC);
   }
 
   return Negative;
@@ -1794,16 +1770,6 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
     S = createExternalCachingSolver (std::move(S), KV);
 
     S->knownBits({}, {}, I, Known, IC);
-    // Lookup in cache
-#if 0
-    if (lookupKnownCache(I)) {
-        Known.Zero = (KnownCache.at(I)).Zero;
-        Known.One = (KnownCache.at(I)).One;
-    } else {
-      S->knownBits({}, {}, I, Known, IC);
-      KnownCache.emplace(I, Known);
-    }
-#endif
   //}
 
 }
