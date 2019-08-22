@@ -77,8 +77,10 @@
 
 #include "souper/Extractor/ExprBuilder.h"
 #include "souper/Extractor/Candidates.h"
+#include "souper/KVStore/KVStore.h"
 #include "souper/SMTLIB2/Solver.h"
 #include "souper/Extractor/Solver.h"
+
 
 using namespace llvm;
 using namespace llvm::PatternMatch;
@@ -1784,8 +1786,10 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
     }
     std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(souper::makeExternalSolverProgram("/usr/bin/z3"),
                                                                       false);
+    auto KV = new souper::KVStore;
     std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/600);
-    
+    S = createExternalCachingSolver (std::move(S), KV);
+
     S->knownBits({}, {}, I, Known, IC);
     // Lookup in cache
 #if 0
