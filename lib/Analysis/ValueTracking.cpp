@@ -160,6 +160,8 @@ struct Query {
 
 } // end anonymous namespace
 
+static souper::KVStore *KV = nullptr;
+
 // Given the provided Value and, potentially, a context instruction, return
 // the preferred context instruction (if any).
 static const Instruction *safeCxtI(const Value *V, const Instruction *CxtI) {
@@ -257,6 +259,7 @@ bool llvm::isKnownNonZero(const Value *V, const DataLayout &DL, unsigned Depth,
                           Query(DL, AC, safeCxtI(V, CxtI), DT, UseInstrInfo));
 }
 
+#if 0
 bool llvm::isKnownNonNegative(const Value *V, const DataLayout &DL,
                               unsigned Depth, AssumptionCache *AC,
                               const Instruction *CxtI, const DominatorTree *DT,
@@ -264,6 +267,37 @@ bool llvm::isKnownNonNegative(const Value *V, const DataLayout &DL,
   KnownBits Known =
       computeKnownBits(V, DL, Depth, AC, CxtI, DT, nullptr, UseInstrInfo);
   return Known.isNonNegative();
+}
+#endif
+
+bool llvm::isKnownNonNegative(const Value *V, const DataLayout &DL,
+                              unsigned Depth, AssumptionCache *AC,
+                              const Instruction *CxtI, const DominatorTree *DT,
+                              bool UseInstrInfo) {
+  souper::ExprBuilderOptions EBO;
+  souper::InstContext IC;
+  souper::ExprBuilderContext EBC;
+  bool debug = false;
+  bool NonNegative;
+
+  if (CxtI) {
+    souper::ExprBuilderS EB(EBO, (CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
+    souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
+    if (debug) {
+      souper::ReplacementContext RC;
+      RC.printInst(I, llvm::errs(), true);
+    }
+
+    std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
+                                               souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                               false);
+    if (!KV) KV = new souper::KVStore;
+    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/600);
+    S = createExternalCachingSolver (std::move(S), KV);
+
+    S->nonNegative({}, {}, I, NonNegative, IC);
+  }
+  return NonNegative;
 }
 
 bool llvm::isKnownPositive(const Value *V, const DataLayout &DL, unsigned Depth,
@@ -297,7 +331,6 @@ bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
   bool debug = false;
   bool Negative;
 
-
   if (CxtI) {
     souper::ExprBuilderS EB(EBO, (CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
     souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
@@ -306,14 +339,15 @@ bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
       RC.printInst(I, llvm::errs(), true);
     }
 
-
-    std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(souper::makeExternalSolverProgram("/usr/bin/z3"),
-                                                                      false);
-    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/60000);
+    std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
+                                               souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                               false);
+    if (!KV) KV = new souper::KVStore;
+    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/600);
+    S = createExternalCachingSolver (std::move(S), KV);
 
     S->negative({}, {}, I, Negative, IC);
   }
-
   return Negative;
 }
 
@@ -1743,8 +1777,6 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
 }
 #endif
 
-static souper::KVStore *KV = nullptr;
-
 void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
                       const Query &Q) {
   //llvm::outs() << "--- In LLVM: computeKnownBits() starts here\n";
@@ -1755,22 +1787,20 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
 
   Known.resetAll();
 
-  //if (Q.CxtI && (Q.CxtI)->getModule()) {
-    souper::ExprBuilderS EB(EBO, Q.DL, 0, 0, 0, 0, 0, IC, EBC);
-    souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
-    if (debug) {
-      souper::ReplacementContext RC;
-      RC.printInst(I, llvm::errs(), true);
-    }
-    std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(souper::makeExternalSolverProgram("/usr/bin/z3"),
-                                                                      false);
-    if (!KV) KV = new souper::KVStore;
+  souper::ExprBuilderS EB(EBO, Q.DL, 0, 0, 0, 0, 0, IC, EBC);
+  souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
+  if (debug) {
+    souper::ReplacementContext RC;
+    RC.printInst(I, llvm::errs(), true);
+  }
+  std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
+                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             false);
+  if (!KV) KV = new souper::KVStore;
+  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/600);
+  S = createExternalCachingSolver (std::move(S), KV);
 
-    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/600);
-    S = createExternalCachingSolver (std::move(S), KV);
-
-    S->knownBits({}, {}, I, Known, IC);
-  //}
+  S->knownBits({}, {}, I, Known, IC);
 
 }
 
@@ -1779,6 +1809,7 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
 /// bit set when defined. For vectors return true if every element is known to
 /// be a power of two when defined. Supports values with integer or pointer
 /// types and vectors of integers.
+#if 0
 bool isKnownToBeAPowerOfTwo(const Value *V, bool OrZero, unsigned Depth,
                             const Query &Q) {
   assert(Depth <= MaxDepth && "Limit Search Depth");
@@ -1870,6 +1901,33 @@ bool isKnownToBeAPowerOfTwo(const Value *V, bool OrZero, unsigned Depth,
   }
 
   return false;
+}
+#endif
+
+bool isKnownToBeAPowerOfTwo(const Value *V, bool OrZero, unsigned Depth,
+                            const Query &Q) {
+  souper::ExprBuilderOptions EBO;
+  souper::InstContext IC;
+  souper::ExprBuilderContext EBC;
+  bool debug = false;
+  bool PowTwo;
+
+  souper::ExprBuilderS EB(EBO, Q.DL, 0, 0, 0, 0, 0, IC, EBC);
+  souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
+  if (debug) {
+    souper::ReplacementContext RC;
+    RC.printInst(I, llvm::errs(), true);
+  }
+
+  std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
+                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             false);
+  if (!KV) KV = new souper::KVStore;
+  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/600);
+  S = createExternalCachingSolver (std::move(S), KV);
+
+  S->powerTwo({}, {}, I, PowTwo, IC);
+  return PowTwo;
 }
 
 /// Test whether a GEP's result is known to be non-null.
@@ -2037,6 +2095,7 @@ static bool rangeMetadataExcludesValue(const MDNode* Ranges, const APInt& Value)
 /// specified, perform context-sensitive analysis and return true if the
 /// pointer couldn't possibly be null at the specified instruction.
 /// Supports values with integer or pointer type and vectors of integers.
+#if 0
 bool isKnownNonZero(const Value *V, unsigned Depth, const Query &Q) {
   if (auto *C = dyn_cast<Constant>(V)) {
     if (C->isNullValue())
@@ -2253,6 +2312,32 @@ bool isKnownNonZero(const Value *V, unsigned Depth, const Query &Q) {
   computeKnownBits(V, Known, Depth, Q);
   return Known.One != 0;
 }
+#endif
+
+bool isKnownNonZero(const Value *V, unsigned Depth, const Query &Q) {
+  souper::ExprBuilderOptions EBO;
+  souper::InstContext IC;
+  souper::ExprBuilderContext EBC;
+  bool debug = false;
+  bool NonZero;
+
+  souper::ExprBuilderS EB(EBO, Q.DL, 0, 0, 0, 0, 0, IC, EBC);
+  souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
+  if (debug) {
+    souper::ReplacementContext RC;
+    RC.printInst(I, llvm::errs(), true);
+  }
+
+  std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
+                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             false);
+  if (!KV) KV = new souper::KVStore;
+  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/600);
+  S = createExternalCachingSolver (std::move(S), KV);
+
+  S->nonZero({}, {}, I, NonZero, IC);
+  return NonZero;
+}
 
 /// Return true if V2 == V1 + X, where X is known non-zero.
 static bool isAddOfNonZero(const Value *V1, const Value *V2, const Query &Q) {
@@ -2365,11 +2450,38 @@ static unsigned computeNumSignBitsVectorConstant(const Value *V,
 static unsigned ComputeNumSignBitsImpl(const Value *V, unsigned Depth,
                                        const Query &Q);
 
+#if 0
 static unsigned ComputeNumSignBits(const Value *V, unsigned Depth,
                                    const Query &Q) {
   unsigned Result = ComputeNumSignBitsImpl(V, Depth, Q);
   assert(Result > 0 && "At least one sign bit needs to be present!");
   return Result;
+}
+#endif
+static unsigned ComputeNumSignBits(const Value *V, unsigned Depth,
+                                   const Query &Q) {
+  souper::ExprBuilderOptions EBO;
+  souper::InstContext IC;
+  souper::ExprBuilderContext EBC;
+  bool debug = false;
+  unsigned SignBits = 1;
+
+  souper::ExprBuilderS EB(EBO, Q.DL, 0, 0, 0, 0, 0, IC, EBC);
+  souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
+  if (debug) {
+    souper::ReplacementContext RC;
+    RC.printInst(I, llvm::errs(), true);
+  }
+
+  std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
+                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             false);
+  if (!KV) KV = new souper::KVStore;
+  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/600);
+  S = createExternalCachingSolver (std::move(S), KV);
+
+  S->signBits({}, {}, I, SignBits, IC);
+  return SignBits;
 }
 
 /// Return the number of times the sign bit of the register is replicated into
