@@ -85,6 +85,8 @@
 using namespace llvm;
 using namespace llvm::PatternMatch;
 
+static constexpr unsigned TO = 10;
+
 //#define DEBUG_TYPE "value-tracking"
 //
 //STATISTIC(NumKnownBitsDFA,
@@ -292,7 +294,7 @@ bool llvm::isKnownNonNegative(const Value *V, const DataLayout &DL,
                                                souper::makeExternalSolverProgram("/usr/bin/z3"),
                                                false);
     if (!KV) KV = new souper::KVStore;
-    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/60);
+    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
     S = createExternalCachingSolver (std::move(S), KV);
 
     S->nonNegative({}, {}, I, NonNegative, IC);
@@ -343,7 +345,7 @@ bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
                                                souper::makeExternalSolverProgram("/usr/bin/z3"),
                                                false);
     if (!KV) KV = new souper::KVStore;
-    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/60);
+    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
     S = createExternalCachingSolver (std::move(S), KV);
 
     S->negative({}, {}, I, Negative, IC);
@@ -1797,7 +1799,7 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
                                              souper::makeExternalSolverProgram("/usr/bin/z3"),
                                              false);
   if (!KV) KV = new souper::KVStore;
-  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/60);
+  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
   S = createExternalCachingSolver (std::move(S), KV);
 
   S->knownBits({}, {}, I, Known, IC);
@@ -1923,7 +1925,7 @@ bool isKnownToBeAPowerOfTwo(const Value *V, bool OrZero, unsigned Depth,
                                              souper::makeExternalSolverProgram("/usr/bin/z3"),
                                              false);
   if (!KV) KV = new souper::KVStore;
-  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/60);
+  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
   S = createExternalCachingSolver (std::move(S), KV);
 
   S->powerTwo({}, {}, I, PowTwo, IC);
@@ -2332,7 +2334,7 @@ bool isKnownNonZero(const Value *V, unsigned Depth, const Query &Q) {
                                              souper::makeExternalSolverProgram("/usr/bin/z3"),
                                              false);
   if (!KV) KV = new souper::KVStore;
-  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/60);
+  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
   S = createExternalCachingSolver (std::move(S), KV);
 
   S->nonZero({}, {}, I, NonZero, IC);
@@ -2477,7 +2479,7 @@ static unsigned ComputeNumSignBits(const Value *V, unsigned Depth,
                                              souper::makeExternalSolverProgram("/usr/bin/z3"),
                                              false);
   if (!KV) KV = new souper::KVStore;
-  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/60);
+  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
   S = createExternalCachingSolver (std::move(S), KV);
 
   S->signBits({}, {}, I, SignBits, IC);
