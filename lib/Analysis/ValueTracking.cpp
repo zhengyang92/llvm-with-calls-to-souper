@@ -85,7 +85,7 @@
 using namespace llvm;
 using namespace llvm::PatternMatch;
 
-static constexpr unsigned TO = 10;
+static constexpr unsigned TO = 600;
 
 //#define DEBUG_TYPE "value-tracking"
 //
