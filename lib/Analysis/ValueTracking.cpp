@@ -75,17 +75,17 @@
 #include <iterator>
 #include <utility>
 
-#include "souper/Extractor/ExprBuilder.h"
-#include "souper/Extractor/Candidates.h"
-#include "souper/KVStore/KVStore.h"
-#include "souper/SMTLIB2/Solver.h"
-#include "souper/Extractor/Solver.h"
+//#include "souper/Extractor/ExprBuilder.h"
+//#include "souper/Extractor/Candidates.h"
+//#include "souper/KVStore/KVStore.h"
+//#include "souper/SMTLIB2/Solver.h"
+//#include "souper/Extractor/Solver.h"
 
 
 using namespace llvm;
 using namespace llvm::PatternMatch;
 
-static constexpr unsigned TO = 60;
+static constexpr unsigned TO = 10;
 
 //#define DEBUG_TYPE "value-tracking"
 //
@@ -162,7 +162,7 @@ struct Query {
 
 } // end anonymous namespace
 
-static souper::KVStore *KV = nullptr;
+//static souper::KVStore *KV = nullptr;
 
 // Given the provided Value and, potentially, a context instruction, return
 // the preferred context instruction (if any).
