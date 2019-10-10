@@ -93,6 +93,7 @@ static constexpr unsigned TO = 60;
 //          "Number of optimizations enabled by known bits dataflow analysis");
 
 const unsigned MaxDepth = 6;
+const std::string z3_path="/home/liuz/jubi/using-souper-as-lib/souper/third_party/z3-install/bin/z3";
 
 // Controls the number of uses of the value searched for possible
 // dominating comparisons.
@@ -291,7 +292,7 @@ bool llvm::isKnownNonNegative(const Value *V, const DataLayout &DL,
     }
 
     std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
-                                               souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                               souper::makeExternalSolverProgram(z3_path),
                                                false);
     if (!KV) KV = new souper::KVStore;
     std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
@@ -342,7 +343,7 @@ bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
     }
 
     std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
-                                               souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                               souper::makeExternalSolverProgram(z3_path),
                                                false);
     if (!KV) KV = new souper::KVStore;
     std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
@@ -1796,7 +1797,7 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
     RC.printInst(I, llvm::errs(), true);
   }
   std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
-                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             souper::makeExternalSolverProgram(z3_path),
                                              false);
   if (!KV) KV = new souper::KVStore;
   std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
@@ -1922,7 +1923,7 @@ bool isKnownToBeAPowerOfTwo(const Value *V, bool OrZero, unsigned Depth,
   }
 
   std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
-                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             souper::makeExternalSolverProgram(z3_path),
                                              false);
   if (!KV) KV = new souper::KVStore;
   std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
@@ -2331,7 +2332,7 @@ bool isKnownNonZero(const Value *V, unsigned Depth, const Query &Q) {
   }
 
   std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
-                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             souper::makeExternalSolverProgram(z3_path),
                                              false);
   if (!KV) KV = new souper::KVStore;
   std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
@@ -2476,7 +2477,7 @@ static unsigned ComputeNumSignBits(const Value *V, unsigned Depth,
   }
 
   std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
-                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             souper::makeExternalSolverProgram(z3_path),
                                              false);
   if (!KV) KV = new souper::KVStore;
   std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
