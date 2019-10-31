@@ -42,6 +42,8 @@ using namespace llvm;
 using namespace PatternMatch;
 
 static constexpr unsigned TO = 10;
+static souper::KVStore *KV = nullptr;
+const std::string z3_path="/home/liuz/jubi/using-souper-as-lib/souper/third_party/z3-install/bin/z3";
 
 #define DEBUG_TYPE "lazy-value-info"
 
@@ -1576,14 +1578,14 @@ ConstantRange LazyValueInfo::getConstantRange(Value *V, BasicBlock *BB,
   souper::ExprBuilderContext EBC;
   bool debug = false;
 
-  souper::ExprBuilderS EB(EBO, (CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
+  souper::ExprBuilderS EB(EBO, BB->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
   souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
   if (debug) {
     souper::ReplacementContext RC;
     RC.printInst(I, llvm::errs(), true);
   }
   std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
-                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             souper::makeExternalSolverProgram(z3_path),
                                              false);
   if (!KV) KV = new souper::KVStore;
   std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);

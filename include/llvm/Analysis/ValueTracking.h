@@ -30,8 +30,6 @@
 #include "souper/SMTLIB2/Solver.h"
 #include "souper/Extractor/Solver.h"
 
-static souper::KVStore *KV = new souper::KVStore;
-
 namespace llvm {
 
 class AddOperator;
