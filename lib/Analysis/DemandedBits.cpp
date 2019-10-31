@@ -421,6 +421,36 @@ void DemandedBits::performAnalysis() {
   }
 }
 
+#if 0
+// FIXME: Limit demanded bits computation for variables only.
+APInt DemandedBits::getDemandedBits(Instruction *I) {
+  souper::ExprBuilderOptions EBO;
+  souper::InstContext IC;
+  souper::ExprBuilderContext EBC;
+  bool debug = false;
+
+  if (I) {
+    souper::ExprBuilderS EB(EBO, (I)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
+    //souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
+    souper::Inst *SI = EB.get(dyn_cast<llvm::Value*>(I));
+    if (debug) {
+      souper::ReplacementContext RC;
+      RC.printInst(SI, llvm::errs(), true);
+    }
+
+    std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
+                                               souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                               false);
+    if (!KV) KV = new souper::KVStore;
+    std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
+    S = createExternalCachingSolver (std::move(S), KV);
+    std::map<std::string, APInt> DBitsVect;
+
+    S->testDemandedBits({}, {}, SI, DBitsVect, IC);
+  }
+}
+#endif
+
 APInt DemandedBits::getDemandedBits(Instruction *I) {
   performAnalysis();
 

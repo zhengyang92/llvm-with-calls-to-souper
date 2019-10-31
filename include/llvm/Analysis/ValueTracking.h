@@ -24,6 +24,14 @@
 #include <cassert>
 #include <cstdint>
 
+#include "souper/Extractor/ExprBuilder.h"
+#include "souper/Extractor/Candidates.h"
+#include "souper/KVStore/KVStore.h"
+#include "souper/SMTLIB2/Solver.h"
+#include "souper/Extractor/Solver.h"
+
+static souper::KVStore *KV = new souper::KVStore;
+
 namespace llvm {
 
 class AddOperator;

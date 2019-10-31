@@ -75,17 +75,17 @@
 #include <iterator>
 #include <utility>
 
-#include "souper/Extractor/ExprBuilder.h"
-#include "souper/Extractor/Candidates.h"
-#include "souper/KVStore/KVStore.h"
-#include "souper/SMTLIB2/Solver.h"
-#include "souper/Extractor/Solver.h"
+//#include "souper/Extractor/ExprBuilder.h"
+//#include "souper/Extractor/Candidates.h"
+//#include "souper/KVStore/KVStore.h"
+//#include "souper/SMTLIB2/Solver.h"
+//#include "souper/Extractor/Solver.h"
 
 
 using namespace llvm;
 using namespace llvm::PatternMatch;
 
-static constexpr unsigned TO = 60;
+static constexpr unsigned TO = 10;
 
 //#define DEBUG_TYPE "value-tracking"
 //
@@ -163,7 +163,7 @@ struct Query {
 
 } // end anonymous namespace
 
-static souper::KVStore *KV = nullptr;
+//static souper::KVStore *KV = nullptr;
 
 // Given the provided Value and, potentially, a context instruction, return
 // the preferred context instruction (if any).
@@ -262,7 +262,7 @@ bool llvm::isKnownNonZero(const Value *V, const DataLayout &DL, unsigned Depth,
                           Query(DL, AC, safeCxtI(V, CxtI), DT, UseInstrInfo));
 }
 
-#if 0
+//#if 0
 bool llvm::isKnownNonNegative(const Value *V, const DataLayout &DL,
                               unsigned Depth, AssumptionCache *AC,
                               const Instruction *CxtI, const DominatorTree *DT,
@@ -271,8 +271,9 @@ bool llvm::isKnownNonNegative(const Value *V, const DataLayout &DL,
       computeKnownBits(V, DL, Depth, AC, CxtI, DT, nullptr, UseInstrInfo);
   return Known.isNonNegative();
 }
-#endif
+//#endif
 
+#if 0
 bool llvm::isKnownNonNegative(const Value *V, const DataLayout &DL,
                               unsigned Depth, AssumptionCache *AC,
                               const Instruction *CxtI, const DominatorTree *DT,
@@ -302,6 +303,7 @@ bool llvm::isKnownNonNegative(const Value *V, const DataLayout &DL,
   }
   return NonNegative;
 }
+#endif
 
 bool llvm::isKnownPositive(const Value *V, const DataLayout &DL, unsigned Depth,
                            AssumptionCache *AC, const Instruction *CxtI,
@@ -315,7 +317,7 @@ bool llvm::isKnownPositive(const Value *V, const DataLayout &DL, unsigned Depth,
          isKnownNonZero(V, DL, Depth, AC, CxtI, DT, UseInstrInfo);
 }
 
-#if (false)
+//#if (false)
 bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
                            AssumptionCache *AC, const Instruction *CxtI,
                            const DominatorTree *DT, bool UseInstrInfo) {
@@ -323,8 +325,9 @@ bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
       computeKnownBits(V, DL, Depth, AC, CxtI, DT, nullptr, UseInstrInfo);
   return Known.isNegative();
 }
-#endif
+//#endif
 
+#if 0
 bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
                            AssumptionCache *AC, const Instruction *CxtI,
                            const DominatorTree *DT, bool UseInstrInfo) {
@@ -353,6 +356,7 @@ bool llvm::isKnownNegative(const Value *V, const DataLayout &DL, unsigned Depth,
   }
   return Negative;
 }
+#endif
 
 static bool isKnownNonEqual(const Value *V1, const Value *V2, const Query &Q);
 
@@ -1674,7 +1678,7 @@ KnownBits computeKnownBits(const Value *V, unsigned Depth, const Query &Q) {
 /// where V is a vector, known zero, and known one values are the
 /// same width as the vector element, and the bit is set only if it is true
 /// for all of the elements in the vector.
-#if (false)
+//#if (false)
 void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
                       const Query &Q) {
   assert(V && "No Value?");
@@ -1778,8 +1782,9 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
 
   assert((Known.Zero & Known.One) == 0 && "Bits known to be one AND zero?");
 }
-#endif
+//#endif
 
+#if 0
 void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
                       const Query &Q) {
   //llvm::outs() << "--- In LLVM: computeKnownBits() starts here\n";
@@ -1806,13 +1811,14 @@ void computeKnownBits(const Value *V, KnownBits &Known, unsigned Depth,
   S->knownBits({}, {}, I, Known, IC);
 
 }
+#endif
 
 
 /// Return true if the given value is known to have exactly one
 /// bit set when defined. For vectors return true if every element is known to
 /// be a power of two when defined. Supports values with integer or pointer
 /// types and vectors of integers.
-#if 0
+//#if 0
 bool isKnownToBeAPowerOfTwo(const Value *V, bool OrZero, unsigned Depth,
                             const Query &Q) {
   assert(Depth <= MaxDepth && "Limit Search Depth");
@@ -1905,8 +1911,9 @@ bool isKnownToBeAPowerOfTwo(const Value *V, bool OrZero, unsigned Depth,
 
   return false;
 }
-#endif
+//#endif
 
+#if 0
 bool isKnownToBeAPowerOfTwo(const Value *V, bool OrZero, unsigned Depth,
                             const Query &Q) {
   souper::ExprBuilderOptions EBO;
@@ -1932,6 +1939,7 @@ bool isKnownToBeAPowerOfTwo(const Value *V, bool OrZero, unsigned Depth,
   S->powerTwo({}, {}, I, PowTwo, IC);
   return PowTwo;
 }
+#endif
 
 /// Test whether a GEP's result is known to be non-null.
 ///
@@ -2098,7 +2106,7 @@ static bool rangeMetadataExcludesValue(const MDNode* Ranges, const APInt& Value)
 /// specified, perform context-sensitive analysis and return true if the
 /// pointer couldn't possibly be null at the specified instruction.
 /// Supports values with integer or pointer type and vectors of integers.
-#if 0
+//#if 0
 bool isKnownNonZero(const Value *V, unsigned Depth, const Query &Q) {
   if (auto *C = dyn_cast<Constant>(V)) {
     if (C->isNullValue())
@@ -2315,8 +2323,9 @@ bool isKnownNonZero(const Value *V, unsigned Depth, const Query &Q) {
   computeKnownBits(V, Known, Depth, Q);
   return Known.One != 0;
 }
-#endif
+//#endif
 
+#if 0
 bool isKnownNonZero(const Value *V, unsigned Depth, const Query &Q) {
   souper::ExprBuilderOptions EBO;
   souper::InstContext IC;
@@ -2341,6 +2350,7 @@ bool isKnownNonZero(const Value *V, unsigned Depth, const Query &Q) {
   S->nonZero({}, {}, I, NonZero, IC);
   return NonZero;
 }
+#endif
 
 /// Return true if V2 == V1 + X, where X is known non-zero.
 static bool isAddOfNonZero(const Value *V1, const Value *V2, const Query &Q) {
@@ -2453,14 +2463,16 @@ static unsigned computeNumSignBitsVectorConstant(const Value *V,
 static unsigned ComputeNumSignBitsImpl(const Value *V, unsigned Depth,
                                        const Query &Q);
 
-#if 0
+//#if 0
 static unsigned ComputeNumSignBits(const Value *V, unsigned Depth,
                                    const Query &Q) {
   unsigned Result = ComputeNumSignBitsImpl(V, Depth, Q);
   assert(Result > 0 && "At least one sign bit needs to be present!");
   return Result;
 }
-#endif
+//#endif
+
+#if 0
 static unsigned ComputeNumSignBits(const Value *V, unsigned Depth,
                                    const Query &Q) {
   souper::ExprBuilderOptions EBO;
@@ -2486,6 +2498,7 @@ static unsigned ComputeNumSignBits(const Value *V, unsigned Depth,
   S->signBits({}, {}, I, SignBits, IC);
   return SignBits;
 }
+#endif
 
 /// Return the number of times the sign bit of the register is replicated into
 /// the other bits. We know that at least 1 bit is always equal to the sign bit

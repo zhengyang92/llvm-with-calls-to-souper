@@ -41,6 +41,8 @@
 using namespace llvm;
 using namespace PatternMatch;
 
+static constexpr unsigned TO = 10;
+
 #define DEBUG_TYPE "lazy-value-info"
 
 // This is the number of worklist items we will process to try to discover an
@@ -1569,6 +1571,30 @@ Constant *LazyValueInfo::getConstant(Value *V, BasicBlock *BB,
 
 ConstantRange LazyValueInfo::getConstantRange(Value *V, BasicBlock *BB,
                                               Instruction *CxtI) {
+  souper::ExprBuilderOptions EBO;
+  souper::InstContext IC;
+  souper::ExprBuilderContext EBC;
+  bool debug = false;
+
+  souper::ExprBuilderS EB(EBO, (CxtI)->getModule()->getDataLayout(), 0, 0, 0, 0, 0, IC, EBC);
+  souper::Inst *I = EB.get(const_cast<llvm::Value*>(V));
+  if (debug) {
+    souper::ReplacementContext RC;
+    RC.printInst(I, llvm::errs(), true);
+  }
+  std::unique_ptr<souper::SMTLIBSolver> US = souper::createZ3Solver(
+                                             souper::makeExternalSolverProgram("/usr/bin/z3"),
+                                             false);
+  if (!KV) KV = new souper::KVStore;
+  std::unique_ptr<souper::Solver> S = souper::createBaseSolver (std::move(US), /*SolverTimeout*/TO);
+  S = createExternalCachingSolver (std::move(S), KV);
+
+  return S->constantRange({}, {}, I, IC);
+}
+
+#if 0
+ConstantRange LazyValueInfo::getConstantRange(Value *V, BasicBlock *BB,
+                                              Instruction *CxtI) {
   assert(V->getType()->isIntegerTy());
   unsigned Width = V->getType()->getIntegerBitWidth();
   const DataLayout &DL = BB->getModule()->getDataLayout();
@@ -1584,6 +1610,7 @@ ConstantRange LazyValueInfo::getConstantRange(Value *V, BasicBlock *BB,
          "ConstantInt value must be represented as constantrange");
   return ConstantRange(Width, /*isFullSet=*/true);
 }
+#endif
 
 /// Determine whether the specified value is known to be a
 /// constant on the specified edge. Return null if not.
