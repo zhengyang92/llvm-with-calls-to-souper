@@ -93,13 +93,17 @@ static constexpr unsigned TO = 10;
 //          "Number of optimizations enabled by known bits dataflow analysis");
 
 const unsigned MaxDepth = 6;
-const std::string z3_path="/home/liuz/jubi/using-souper-as-lib/souper/third_party/z3-install/bin/z3";
 static souper::KVStore *KV = nullptr;
 
 // Controls the number of uses of the value searched for possible
 // dominating comparisons.
 static cl::opt<unsigned> DomConditionsMaxUses("dom-conditions-max-uses",
                                               cl::Hidden, cl::init(20));
+
+static cl::opt<std::string> z3_path(
+    "z3-path", llvm::cl::desc("Path to Z3 executable"),
+    llvm::cl::init(""),
+    llvm::cl::value_desc("path"));
 
 /// Returns the bitwidth of the given scalar or pointer type. For vector types,
 /// returns the element type's bitwidth.
